@@ -11,36 +11,36 @@ from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
 import matplotlib.pyplot as plt
 
 
-# Ignore warnings
+
 warnings.filterwarnings('ignore')
 
-# --- 1. Load Data ---
+
 df = pd.read_csv("diabetes.csv")
 X = df.drop("Outcome", axis=1)
 y = df["Outcome"]
 
-# --- 2. Data Cleaning ---
+
 cols_with_zero_issue = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
 X[cols_with_zero_issue] = X[cols_with_zero_issue].replace(0, np.nan)
 
-# Group-wise median imputation for critical columns
+
 cols_to_group_fill = ["Glucose", "Insulin"]
 X[cols_to_group_fill] = X[cols_to_group_fill].fillna(df.groupby('Outcome')[cols_to_group_fill].transform('median'))
 
-# --- 3. Feature Engineering ---
+# Feature Engineering 
 X['Glucose_BMI'] = X['Glucose'] * X['BMI']
 X['Age_Glucose'] = X['Age'] * X['Glucose']
 X['BloodPressure_BMI'] = X['BloodPressure'] * X['BMI']
 
-# Insulin to Glucose Ratio (adding a small value to avoid division by zero)
+
 X['Insulin_Glucose_Ratio'] = X['Insulin'] / (X['Glucose'] + 1e-5)
 
-# --- 4. Train-Test Split ---
+# train-test split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# --- 5. Pipeline Setup ---
+
 preprocessor = Pipeline(steps=[
     ("imputer", SimpleImputer(strategy="median")), 
     ("scaler", RobustScaler())
@@ -64,7 +64,7 @@ grid_search.fit(X_train, y_train)
 
 best_model = grid_search.best_estimator_
 
-# --- 6. Evaluation ---
+
 y_pred = best_model.predict(X_test)
 y_proba = best_model.predict_proba(X_test)[:, 1]
 
@@ -75,7 +75,7 @@ print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
 
 
-# --- 7. Save Model ---
+
 model_file = "diabetes_best_model.pkl"
 with open(model_file, "wb") as f:
     pickle.dump(best_model, f)
